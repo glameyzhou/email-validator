@@ -33,25 +33,21 @@ public class EmailValidator {
 
   public boolean validate(String emailAddress) {
     try {
-      //校验email格式
+      //validate the email address format
       validateFormat(emailAddress);
 
-      //获取邮箱服务器地址
+      //get the email server address
       String emailServer = getEmailServer(emailAddress);
 
-      //查找对应的MX记录
+      //lookup mx records
       Record[] records = lookupMX(emailServer);
 
-      //校验MX的有效性
+      //validate the mx records
       validateMX(records);
 
-      //尝试连接指定的emailAddress
+      //try acquire the email connection,send a signal to test...
       boolean acquire = tryAcquire(emailAddress);
-      if (acquire) {
-        System.out.println(String.format("-->emailAddress [%s] is validate.", emailAddress));
-      } else {
-        throw new RuntimeException(String.format("-->emailAddress [%s] is invalidate.", emailAddress));
-      }
+      System.out.println(String.format("--> [%s] is %s", emailAddress, acquire ? "valid" : "invalid"));
       return acquire;
 
     } catch (IOException e) {
@@ -75,10 +71,10 @@ public class EmailValidator {
   }
 
   private void validateFormat(String emailAddress) {
-    Preconditions.checkNotNull(emailAddress, "邮箱地址为空");
+    Preconditions.checkNotNull(emailAddress, "the email address is empty");
     Matcher matcher = PATTERN.matcher(emailAddress);
     if (!matcher.find()) {
-      throw new RuntimeException(String.format("邮箱地址格式无效,emailAddress=%s", emailAddress));
+      throw new RuntimeException(String.format("the email address format invalid,emailAddress=%s", emailAddress));
     }
   }
 
@@ -88,7 +84,7 @@ public class EmailValidator {
     Lookup lookup = new Lookup(emailServer, Type.MX);
     lookup.run();
     if (lookup.getResult() != Lookup.SUCCESSFUL) {
-      throw new RuntimeException(String.format("解析邮件地址域名错误,hostName=%s", emailServer));
+      throw new RuntimeException(String.format("lookup MX error,hostName=%s", emailServer));
     } else {
       records = lookup.getAnswers();
     }
@@ -110,7 +106,7 @@ public class EmailValidator {
       }
     }
     if (Strings.isNullOrEmpty(validateServer)) {
-      throw new RuntimeException(String.format("未查询到有效的MX地址"));
+      throw new RuntimeException(String.format("can not find the valid mx"));
     }
   }
 
@@ -133,10 +129,13 @@ public class EmailValidator {
   }
 
   public static void main(String[] args) throws Exception {
-    if (args == null || args.length != 1) {
+   /* if (args == null || args.length != 1) {
       System.out.println("参数格式为 java -jar email-validator.jar [emailAddress]");
       return;
     }
-    System.out.println(new EmailValidator().validate(args[0]));
+    System.out.println(new EmailValidator().validate(args[0]));*/
+
+    new EmailValidator().validate("shangguanhong@b-ray.com.cn");
+    new EmailValidator().validate("qingyun.song@bossfounder.com.cn");
   }
 }
