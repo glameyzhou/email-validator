@@ -38,13 +38,13 @@ public class EmailValidator {
 
   public boolean validate(String emailAddress) {
     try {
+      this.emailAddress = emailAddress;
+
       //validate the email address format
       validateFormat(emailAddress);
 
       //get the email server address
-      String emailServer = getEmailServer(emailAddress);
-      this.emailAddress = emailAddress;
-      this.emailServer = emailServer;
+      String emailServer = getEmailServer();
 
       //lookup mx records
       Record[] records = lookupMX();
@@ -69,11 +69,12 @@ public class EmailValidator {
     return false;
   }
 
-  private String getEmailServer(String emailAddress) {
+  private String getEmailServer() {
     Iterable<String> split = SPLITTER_AT.split(emailAddress);
     Iterator<String> iterator = split.iterator();
     iterator.next();
     String emailServer = iterator.next();
+    this.emailServer = emailServer;
     return emailServer;
   }
 
