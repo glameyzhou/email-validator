@@ -17,6 +17,9 @@ import java.util.regex.Pattern;
 
 /**
  * <p>校验邮箱地址是否符合要求</p>
+ * <p>
+ * <p>参考文档：http://verify-email.org/</p>
+ * <p>
  * Created by zhouyang.zhou.
  */
 public class EmailValidator {
@@ -26,6 +29,8 @@ public class EmailValidator {
   private static final Splitter SPLITTER_AT = Splitter.on("@").trimResults();
 
   private SMTPClient smtpClient;
+  private String emailAddress;
+  private String emailServer;
 
   public EmailValidator() {
     this.smtpClient = new SMTPClient();
@@ -38,15 +43,17 @@ public class EmailValidator {
 
       //get the email server address
       String emailServer = getEmailServer(emailAddress);
+      this.emailAddress = emailAddress;
+      this.emailServer = emailServer;
 
       //lookup mx records
-      Record[] records = lookupMX(emailServer);
+      Record[] records = lookupMX();
 
       //validate the mx records
       validateMX(records);
 
       //try acquire the email connection,send a signal to test...
-      boolean acquire = tryAcquire(emailAddress);
+      boolean acquire = tryAcquire();
       System.out.println(String.format("--> [%s] is %s", emailAddress, acquire ? "valid" : "invalid"));
       return acquire;
 
@@ -78,7 +85,7 @@ public class EmailValidator {
     }
   }
 
-  private Record[] lookupMX(String emailServer) throws TextParseException {
+  private Record[] lookupMX() throws TextParseException {
     Record[] records;
     // 查找MX记录
     Lookup lookup = new Lookup(emailServer, Type.MX);
@@ -99,8 +106,9 @@ public class EmailValidator {
       if (SMTPReply.isPositiveCompletion(smtpClient.getReplyCode())) {
         //验证OK
         validateServer = host;
-        System.out.println("--> Connection [" + host + "] Success... ");
-        System.out.println("-->" + smtpClient.getReplyString());
+        System.out.println(String.format("MX record about %s exists.", emailServer));
+        System.out.println(String.format("Connection succeeded to %s SMTP.", validateServer));
+        System.out.println(smtpClient.getReplyString());
 
         break;
       }
@@ -110,32 +118,30 @@ public class EmailValidator {
     }
   }
 
-  private boolean tryAcquire(String emailAddress) throws IOException {
+  private boolean tryAcquire() throws IOException {
     String fromAddress = "glamey.zhou@gmail.com";
-    System.out.println("HELO qq.com");
-    smtpClient.login("gmail.com");
-    System.out.println("-->" + smtpClient.getReplyString());
+    String fromServer = "gmail.com";
+    System.out.println(String.format("> HELO %s", fromServer));
+    smtpClient.login(fromServer);
+    System.out.println(smtpClient.getReplyString());
 
-    System.out.println("MAIL FROM <" + fromAddress + ">");
+    System.out.println("> MAIL FROM <" + fromAddress + ">");
     smtpClient.setSender(fromAddress);
-    System.out.println("-->" + smtpClient.getReplyString());
+    System.out.println("=" + smtpClient.getReplyString());
 
-    System.out.println("RECIPIENT <" + emailAddress + ">");
+    System.out.println("> RCPT TO <" + emailAddress + ">");
     smtpClient.addRecipient(emailAddress);
-    System.out.println("-->" + smtpClient.getReplyString());
+    System.out.println("=" + smtpClient.getReplyString());
 
     int replyCode = smtpClient.getReplyCode();
     return SMTPReply.ACTION_OK == replyCode;
   }
 
   public static void main(String[] args) throws Exception {
-   /* if (args == null || args.length != 1) {
+    if (args == null || args.length != 1) {
       System.out.println("参数格式为 java -jar email-validator.jar [emailAddress]");
       return;
     }
-    System.out.println(new EmailValidator().validate(args[0]));*/
-
-    new EmailValidator().validate("shangguanhong@b-ray.com.cn");
-    new EmailValidator().validate("qingyun.song@bossfounder.com.cn");
+    System.out.println(new EmailValidator().validate(args[0]));
   }
 }
